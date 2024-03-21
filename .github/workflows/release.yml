@@ -1,0 +1,55 @@
+# 工作流的名称
+name: Release And Build Docker
+
+on:
+  release:
+    # 创建release时触发
+    types: [created]
+
+jobs:
+  releases-matrix:
+    name: Release Go Binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [ linux ]
+        goarch: [ amd64, arm64 ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: wangyoucao577/go-release-action@v1.46
+        with:
+          github_token: ${{ secrets.MY_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          goversion: "https://go.dev/dl/go1.16.6.linux-amd64.tar.gz"
+          project_path: "./src"
+          binary_name: "kafka2es"
+  docker:
+    # 指定的运行器环境
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检出当前代码(触发工作流时的commits)
+      - name: Checkout
+        uses: actions/checkout@v4
+      # 获取docker源信息
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: registry.cn-beijing.aliyuncs.com/whoops/kafka2es
+      # 登录到阿里云容器镜像服务
+      - name: Login to Ali Docker
+        uses: docker/login-action@v3
+        # 配置登录信息，secrets 变量在 github settings -> secrets 中设置
+        with:
+          registry: ${{ secrets.ALI_DOCKER_HUB_REGISTRY }}
+          username: ${{ secrets.ALI_DOCKER_HUB_USN }}
+          password: ${{ secrets.ALI_DOCKER_HUB_PWD }}
+      # 构建镜像并上传到阿里云容器镜像仓库
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}

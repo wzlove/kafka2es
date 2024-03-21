@@ -1,0 +1,19 @@
+handler: #处理器配置
+  - kafkaConf: # kafka相关配置
+      brokers:
+        - "10.139.62.125:9092"
+      topics:
+        - test
+      groupID: test
+      consumers: 4
+    elasticConf: # es相关配置
+      hosts:
+        - http://10.60.110.45:9200
+      index: "test"
+      workers: 4
+    formatConf: # 需要格式化的操作
+      - action: "demo"
+log:
+  level: DEBUG
+  logPath: ../logs/kafka2es
+port: 8080
