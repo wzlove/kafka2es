@@ -11,13 +11,13 @@ import (
 	"whoops/kafka2es/src/model"
 )
 
-//EsService ES服务
+// EsService ES服务
 type EsService struct {
 	esClient       *elastic.Client    //es客户端
 	esDataObjPool  sync.Pool          //esData的对象池
 	esDataTaskPool *ants.PoolWithFunc //异步处理es的数据的协程池
-	workNum        int                //并发执行的work数量
-	bulkActionNum  int                //flush的批量条数
+	workNum        int32              //并发执行的work数量
+	bulkActionNum  int32              //flush的批量条数
 }
 
 var (
@@ -25,7 +25,7 @@ var (
 	EsDataChannel = make(chan *EsData)
 )
 
-//Init 初始化es服务
+// Init 初始化es服务
 func Init(handlerConf *model.Handler) {
 	//初始化es数据的chanel缓冲区大小
 	if bulkActions := handlerConf.ElasticConf.BulkActions; bulkActions > 0 {
@@ -51,7 +51,7 @@ func Init(handlerConf *model.Handler) {
 	go esService.handleDataToEs()
 }
 
-//initEsClient 初始化es客户端
+// initEsClient 初始化es客户端
 func initEsClient(handlerConf *model.Handler) (*elastic.Client, error) {
 	if len(handlerConf.ElasticConf.Hosts) == 0 {
 		return nil, errors.New("es hosts is empty")
@@ -101,7 +101,7 @@ func initEsClient(handlerConf *model.Handler) (*elastic.Client, error) {
  */
 func (es *EsService) initEsDataTaskPool(esClient *elastic.Client) {
 	logrus.Infof("init esData task pool success")
-	esDataTaskPool, _ := ants.NewPoolWithFunc(es.workNum, func(esDataListObj interface{}) {
+	esDataTaskPool, _ := ants.NewPoolWithFunc(int(es.workNum), func(esDataListObj interface{}) {
 		esDataList := esDataListObj.([]*EsData)
 		err := es.bulkOperate(esClient, esDataList)
 		if err != nil {
@@ -111,7 +111,7 @@ func (es *EsService) initEsDataTaskPool(esClient *elastic.Client) {
 	es.esDataTaskPool = esDataTaskPool
 }
 
-//批量操作数据到es
+// 批量操作数据到es
 func (es *EsService) bulkOperate(esClient *elastic.Client, list []*EsData) error {
 	if len(list) == 0 {
 		return nil
@@ -128,10 +128,10 @@ func (es *EsService) bulkOperate(esClient *elastic.Client, list []*EsData) error
 	}
 	bulkProcessorService := esClient.BulkProcessor()
 	if es.workNum > 0 {
-		bulkProcessorService.Workers(es.workNum)
+		bulkProcessorService.Workers(int(es.workNum))
 	}
 	if es.bulkActionNum > 0 {
-		bulkProcessorService.BulkActions(es.bulkActionNum)
+		bulkProcessorService.BulkActions(int(es.bulkActionNum))
 	}
 	p, err := bulkProcessorService.Do(ctx)
 	if err != nil {
@@ -151,7 +151,7 @@ func (es *EsService) handleDataToEs() {
 	esDatalist := es.esDataObjPool.Get().([]*EsData)
 	for esData := range EsDataChannel {
 		esDatalist = append(esDatalist, esData)
-		if len(esDatalist) >= es.bulkActionNum {
+		if len(esDatalist) >= int(es.bulkActionNum) {
 			if err := es.esDataTaskPool.Invoke(esDatalist); err != nil {
 				logrus.Errorf("write es data err,%s", err.Error())
 			}

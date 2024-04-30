@@ -3,9 +3,9 @@ package model
 type (
 	//GlobalConfig 配置信息
 	GlobalConfig struct {
-		Handler []*Handler //handler相关配置
 		Log     *LogConf   //日志相关配置
-		Port    int        //http端口号
+		Handler []*Handler //handler相关配置
+		Port    int32      //http端口号
 	}
 
 	Handler struct {
@@ -19,19 +19,19 @@ type (
 	}
 
 	KafkaConf struct {
+		GroupID   string   //消费者的组id
 		Brokers   []string //kafka的 brokers
 		Topics    []string //消费的topic
-		GroupID   string   //消费者的组id
+		Consumers int32    //消费者的数量
+		QueueSize int32    //消息队列大小
 		MinBytes  int32    //一次请求抓取的最小bytes
-		Consumers int      //消费者的数量
-		QueueSize int      //消息队列大小
 	}
 
 	ElasticConf struct {
-		Hosts       []string //ES的地址
-		BulkActions int      //批量写ES的个数
 		Index       string   //ES写入的index索引名
-		Workers     int      //写ES的工作数量
+		Hosts       []string //ES的地址
+		BulkActions int32    //批量写ES的个数
+		Workers     int32    //写ES的工作数量
 	}
 
 	//LogConf 日志相关配置

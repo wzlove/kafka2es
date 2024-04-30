@@ -20,7 +20,7 @@ type ConsumerClient struct {
 	ready chan bool
 }
 
-//InitConsumerMessageQueue 初始化消费者消息队列
+// InitConsumerMessageQueue 初始化消费者消息队列
 func InitConsumerMessageQueue(conf *model.KafkaConf) chan string {
 	messageQueue := withMessageQueue(conf.QueueSize)
 	consumerClient := &ConsumerClient{
@@ -35,15 +35,15 @@ func InitConsumerMessageQueue(conf *model.KafkaConf) chan string {
 	return messageQueue
 }
 
-//WithMessageQueue 获取缓存消息队列
-func withMessageQueue(size int) chan string {
+// WithMessageQueue 获取缓存消息队列
+func withMessageQueue(size int32) chan string {
 	if size <= 0 {
 		return make(chan string)
 	}
 	return make(chan string, size)
 }
 
-//新建消费者组
+// 新建消费者组
 func newConsumerGroup(conf *model.KafkaConf) sarama.ConsumerGroup {
 	kafkaConf := sarama.NewConfig()
 	kafkaConf.Consumer.Return.Errors = true
@@ -62,7 +62,7 @@ func newConsumerGroup(conf *model.KafkaConf) sarama.ConsumerGroup {
 	}
 }
 
-//StartConsume 消息消息
+// StartConsume 消息消息
 func (cc *ConsumerClient) StartConsume() {
 	go cc.captureErrs()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -102,7 +102,7 @@ func (cc *ConsumerClient) StartConsume() {
 	}
 }
 
-//捕捉错误消息,并打印日志
+// 捕捉错误消息,并打印日志
 func (cc *ConsumerClient) captureErrs() {
 	// Track errors
 	for err := range cc.client.Errors() {
