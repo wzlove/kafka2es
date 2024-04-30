@@ -12,12 +12,12 @@ import (
 )
 
 type ConsumerClient struct {
+	client sarama.ConsumerGroup
 	//消息处理器
 	handler *MessageHandler
-	topics  []string
-	client  sarama.ConsumerGroup
 	//就绪通道，判断是否退出
-	ready chan bool
+	ready  chan bool
+	topics []string
 }
 
 // InitConsumerMessageQueue 初始化消费者消息队列

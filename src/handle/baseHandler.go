@@ -25,14 +25,14 @@ type (
 	HandlerOption func(options *handlerOption)
 
 	handlerOption struct {
-		bulkCount  int                 //批处理大小
-		esIndex    string              //es的索引
 		taskPool   *ants.Pool          //异步处理任务的工作池
+		esIndex    string              //es的索引
 		formatFunc []format.FuncFormat //格式化数据的函数
+		bulkCount  int32               //批处理大小
 	}
 )
 
-func WithBulkCount(bulkCount int) HandlerOption {
+func WithBulkCount(bulkCount int32) HandlerOption {
 	return func(options *handlerOption) {
 		options.bulkCount = bulkCount
 	}
@@ -58,7 +58,7 @@ func WithFormatFun(formatFunc []format.FuncFormat) HandlerOption {
 	}
 }
 
-//initHandler 初始化handler处理器
+// initHandler 初始化handler处理器
 func initHandler(messageQueue chan string, opts ...HandlerOption) {
 	options := newHandlerOptions()
 	for _, opt := range opts {
@@ -81,7 +81,7 @@ func newHandlerOptions() handlerOption {
 	}
 }
 
-//Start 开始执行handler
+// Start 开始执行handler
 func (handler *BaseHandler) Start() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -97,7 +97,7 @@ func (handler *BaseHandler) Start() {
 	}
 }
 
-//格式化数据后放到EsChannel中
+// 格式化数据后放到EsChannel中
 func (handler *BaseHandler) putTaskBodyToEsChannel(body string) {
 	if err := handler.taskPool.Submit(func() {
 		esData := &es_proxy.EsData{
